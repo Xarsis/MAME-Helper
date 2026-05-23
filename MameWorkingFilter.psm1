@@ -7,31 +7,122 @@ function GetMainMenuItems {
     param($menuArgs)
 
     $menuItem1 = New-Object Playnite.SDK.Plugins.ScriptMainMenuItem
-    $menuItem1.Description = "MAME: Tag All Games by Status"
-    $menuItem1.FunctionName = "MameFilter_TagByStatus"
+    $menuItem1.Description = "MAME: Set Source on All MAME Games"
+    $menuItem1.FunctionName = "MameFilter_SetSource"
     $menuItem1.MenuSection = "@MAME Working Filter"
 
     $menuItem2 = New-Object Playnite.SDK.Plugins.ScriptMainMenuItem
-    $menuItem2.Description = "MAME: Hide Imperfect ROMs (reversible)"
-    $menuItem2.FunctionName = "MameFilter_HideImperfect"
+    $menuItem2.Description = "MAME: Set Category on All MAME Games"
+    $menuItem2.FunctionName = "MameFilter_SetCategory"
     $menuItem2.MenuSection = "@MAME Working Filter"
 
     $menuItem3 = New-Object Playnite.SDK.Plugins.ScriptMainMenuItem
-    $menuItem3.Description = "MAME: Hide Non-Working ROMs (reversible)"
-    $menuItem3.FunctionName = "MameFilter_HideNonWorking"
+    $menuItem3.Description = "MAME: Tag All Games by Status"
+    $menuItem3.FunctionName = "MameFilter_TagByStatus"
     $menuItem3.MenuSection = "@MAME Working Filter"
 
     $menuItem4 = New-Object Playnite.SDK.Plugins.ScriptMainMenuItem
-    $menuItem4.Description = "MAME: REMOVE Non-Working ROMs (permanent)"
-    $menuItem4.FunctionName = "MameFilter_RemoveNonWorking"
+    $menuItem4.Description = "MAME: Hide Imperfect ROMs (reversible)"
+    $menuItem4.FunctionName = "MameFilter_HideImperfect"
     $menuItem4.MenuSection = "@MAME Working Filter"
 
     $menuItem5 = New-Object Playnite.SDK.Plugins.ScriptMainMenuItem
-    $menuItem5.Description = "MAME: Diagnose GameId Format"
-    $menuItem5.FunctionName = "MameFilter_DiagnoseGameId"
+    $menuItem5.Description = "MAME: Hide Non-Working ROMs (reversible)"
+    $menuItem5.FunctionName = "MameFilter_HideNonWorking"
     $menuItem5.MenuSection = "@MAME Working Filter"
 
-    return $menuItem1, $menuItem2, $menuItem3, $menuItem4, $menuItem5
+    $menuItem6 = New-Object Playnite.SDK.Plugins.ScriptMainMenuItem
+    $menuItem6.Description = "MAME: REMOVE Non-Working ROMs (permanent)"
+    $menuItem6.FunctionName = "MameFilter_RemoveNonWorking"
+    $menuItem6.MenuSection = "@MAME Working Filter"
+
+    $menuItem7 = New-Object Playnite.SDK.Plugins.ScriptMainMenuItem
+    $menuItem7.Description = "MAME: Diagnose GameId Format"
+    $menuItem7.FunctionName = "MameFilter_DiagnoseGameId"
+    $menuItem7.MenuSection = "@MAME Working Filter"
+
+    return $menuItem1, $menuItem2, $menuItem3, $menuItem4, $menuItem5, $menuItem6, $menuItem7
+}
+
+function MameFilter_SetSource {
+    param($actionArgs)
+
+    $statusMap = MameFilter_GetDriverStatus
+    if (-not $statusMap) { return }
+
+    # Ask user what to set the source to
+    $sourceName = $PlayniteApi.Dialogs.SelectString(
+        "Enter the source name to assign to all matched MAME games:",
+        "MAME Working Filter - Set Source",
+        "MAME"
+    )
+    if (-not $sourceName.Result) { return }
+    $sourceValue = $sourceName.SelectedString
+
+    # Get or create the source entry
+    $source = $PlayniteApi.Database.Sources.Add($sourceValue)
+
+    $updated = 0
+    $skipped = 0
+
+    foreach ($game in $PlayniteApi.Database.Games) {
+        $key = $game.Name.ToLower().Trim()
+        if ($statusMap.ContainsKey($key)) {
+            $game.SourceId = $source.Id
+            $PlayniteApi.Database.Games.Update($game)
+            $updated++
+        } else {
+            $skipped++
+        }
+    }
+
+    [void]$PlayniteApi.Dialogs.ShowMessage(
+        "Done!`nSource set to '$sourceValue' on: $updated games`nNo MAME match found: $skipped",
+        "MAME Working Filter - Set Source"
+    )
+}
+
+function MameFilter_SetCategory {
+    param($actionArgs)
+
+    $statusMap = MameFilter_GetDriverStatus
+    if (-not $statusMap) { return }
+
+    # Ask user what category to assign
+    $categoryName = $PlayniteApi.Dialogs.SelectString(
+        "Enter the category name to assign to all matched MAME games:",
+        "MAME Working Filter - Set Category",
+        "Arcade"
+    )
+    if (-not $categoryName.Result) { return }
+    $categoryValue = $categoryName.SelectedString
+
+    # Get or create the category entry
+    $category = $PlayniteApi.Database.Categories.Add($categoryValue)
+
+    $updated = 0
+    $skipped = 0
+
+    foreach ($game in $PlayniteApi.Database.Games) {
+        $key = $game.Name.ToLower().Trim()
+        if ($statusMap.ContainsKey($key)) {
+            if ($null -eq $game.CategoryIds) {
+                $game.CategoryIds = New-Object System.Collections.Generic.List[System.Guid]
+            }
+            if ($game.CategoryIds -notcontains $category.Id) {
+                $game.CategoryIds.Add($category.Id)
+            }
+            $PlayniteApi.Database.Games.Update($game)
+            $updated++
+        } else {
+            $skipped++
+        }
+    }
+
+    [void]$PlayniteApi.Dialogs.ShowMessage(
+        "Done!`nCategory '$categoryValue' assigned to: $updated games`nNo MAME match found: $skipped",
+        "MAME Working Filter - Set Category"
+    )
 }
 
 function MameFilter_GetDriverStatus {
