@@ -7,26 +7,31 @@ function GetMainMenuItems {
     param($menuArgs)
 
     $menuItem1 = New-Object Playnite.SDK.Plugins.ScriptMainMenuItem
-    $menuItem1.Description = "MAME: Hide Non-Working ROMs (reversible)"
-    $menuItem1.FunctionName = "MameFilter_HideNonWorking"
+    $menuItem1.Description = "MAME: Tag All Games by Status"
+    $menuItem1.FunctionName = "MameFilter_TagByStatus"
     $menuItem1.MenuSection = "@MAME Working Filter"
 
     $menuItem2 = New-Object Playnite.SDK.Plugins.ScriptMainMenuItem
-    $menuItem2.Description = "MAME: Tag All Games by Status"
-    $menuItem2.FunctionName = "MameFilter_TagByStatus"
+    $menuItem2.Description = "MAME: Hide Imperfect ROMs (reversible)"
+    $menuItem2.FunctionName = "MameFilter_HideImperfect"
     $menuItem2.MenuSection = "@MAME Working Filter"
 
     $menuItem3 = New-Object Playnite.SDK.Plugins.ScriptMainMenuItem
-    $menuItem3.Description = "MAME: REMOVE Non-Working ROMs (permanent)"
-    $menuItem3.FunctionName = "MameFilter_RemoveNonWorking"
+    $menuItem3.Description = "MAME: Hide Non-Working ROMs (reversible)"
+    $menuItem3.FunctionName = "MameFilter_HideNonWorking"
     $menuItem3.MenuSection = "@MAME Working Filter"
 
     $menuItem4 = New-Object Playnite.SDK.Plugins.ScriptMainMenuItem
-    $menuItem4.Description = "MAME: Diagnose GameId Format"
-    $menuItem4.FunctionName = "MameFilter_DiagnoseGameId"
+    $menuItem4.Description = "MAME: REMOVE Non-Working ROMs (permanent)"
+    $menuItem4.FunctionName = "MameFilter_RemoveNonWorking"
     $menuItem4.MenuSection = "@MAME Working Filter"
 
-    return $menuItem1, $menuItem2, $menuItem3, $menuItem4
+    $menuItem5 = New-Object Playnite.SDK.Plugins.ScriptMainMenuItem
+    $menuItem5.Description = "MAME: Diagnose GameId Format"
+    $menuItem5.FunctionName = "MameFilter_DiagnoseGameId"
+    $menuItem5.MenuSection = "@MAME Working Filter"
+
+    return $menuItem1, $menuItem2, $menuItem3, $menuItem4, $menuItem5
 }
 
 function MameFilter_GetDriverStatus {
@@ -126,6 +131,34 @@ function MameFilter_HideNonWorking {
 
     [void]$PlayniteApi.Dialogs.ShowMessage(
         "Done!`nHidden (non-working): $hidden`nNo MAME match found: $skipped",
+        "MAME Working ROM Filter"
+    )
+}
+
+function MameFilter_HideImperfect {
+    param($actionArgs)
+
+    $statusMap = MameFilter_GetDriverStatus
+    if (-not $statusMap) { return }
+
+    $hidden  = 0
+    $skipped = 0
+
+    foreach ($game in $PlayniteApi.Database.Games) {
+        $key = $game.Name.ToLower().Trim()
+        if ($statusMap.ContainsKey($key)) {
+            if ($statusMap[$key] -eq "imperfect") {
+                $game.Hidden = $true
+                $PlayniteApi.Database.Games.Update($game)
+                $hidden++
+            }
+        } else {
+            $skipped++
+        }
+    }
+
+    [void]$PlayniteApi.Dialogs.ShowMessage(
+        "Done!`nHidden (imperfect): $hidden`nNo MAME match found: $skipped",
         "MAME Working ROM Filter"
     )
 }
