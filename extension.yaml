@@ -1,0 +1,6 @@
+Id: 00000000-0000-0000-0000-000000000001
+Name: MAME Working ROM Filter
+Author: Custom
+Version: 1.0
+Module: MameWorkingFilter.psm1
+Type: Script
