@@ -54,8 +54,11 @@ Tags every matched game with one of:
 
 Nothing is hidden or removed. Use this to review which games will be affected before running hide or remove. You can then filter your Playnite library by tag to spot-check the results.
 
+### MAME: Hide Imperfect ROMs *(reversible)*
+Hides all games with `imperfect` driver status only. Games with `preliminary` status are unaffected.
+
 ### MAME: Hide Non-Working ROMs *(reversible)*
-Hides all games with `preliminary` driver status. Games remain in your database but disappear from the library view. Reversible — unhide via Playnite's filter panel (Show Hidden Games).
+Hides all games with `preliminary` driver status only. Games with `imperfect` status are unaffected. Games remain in your database but disappear from the library view. Reversible — unhide via Playnite's filter panel (Show Hidden Games).
 
 ### MAME: REMOVE Non-Working ROMs *(permanent)*
 Permanently deletes all `preliminary` games from your Playnite library. Shows a confirmation prompt before proceeding. **This cannot be undone.**
@@ -116,3 +119,4 @@ After importing, the [MAME Utility](https://github.com/gerrykeys/playnite-mame-u
 | 1.9 | Fixed matching — switched from GameId to game.Name lookup against ROM names |
 | 1.10 | Fixed `ContainsKey` on Process object — suppressed `Start-Process -PassThru` return value with `[void]` |
 | 1.11 | Added Diagnose function; added Notepad++ support for diagnostic output |
+| 1.12 | Added "Hide Imperfect ROMs" menu option; reordered menu: Tag, Hide Imperfect, Hide Non-Working, Remove, Diagnose |
