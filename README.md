@@ -23,7 +23,7 @@ A Playnite script extension that filters non-working MAME ROMs from your library
    ```
 4. Open `MameWorkingFilter.psm1` in a text editor and update the MAME path at the top of the file:
    ```powershell
-   $MameExePath = "C:\Program Files\MAME\mame.exe"
+   $MameExePath = "S:\MAME\MAME\mame.exe"
    ```
 5. Restart Playnite
 6. The extension will appear under **Extensions → MAME Working Filter**
@@ -45,6 +45,12 @@ When any filter action is run, the extension:
 | `preliminary` | Non-working / broken |
 
 ## Menu Options
+
+### MAME: Set Source on All MAME Games
+Prompts for a source name (defaults to `MAME`) and assigns it to every matched game. Useful since Playnite does not set the Source field automatically when importing MAME ROMs via the emulator scan.
+
+### MAME: Set Category on All MAME Games
+Prompts for a category name (defaults to `Arcade`) and assigns it to every matched game. The category is added without removing any existing categories the game may already have.
 
 ### MAME: Tag All Games by Status *(recommended first step)*
 Tags every matched game with one of:
@@ -120,3 +126,4 @@ After importing, the [MAME Utility](https://github.com/gerrykeys/playnite-mame-u
 | 1.10 | Fixed `ContainsKey` on Process object — suppressed `Start-Process -PassThru` return value with `[void]` |
 | 1.11 | Added Diagnose function; added Notepad++ support for diagnostic output |
 | 1.12 | Added "Hide Imperfect ROMs" menu option; reordered menu: Tag, Hide Imperfect, Hide Non-Working, Remove, Diagnose |
+| 1.13 | Added "Set Source" and "Set Category" menu options with user text input dialogs |
