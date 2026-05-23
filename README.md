@@ -23,7 +23,7 @@ A Playnite script extension that filters non-working MAME ROMs from your library
    ```
 4. Open `MameWorkingFilter.psm1` in a text editor and update the MAME path at the top of the file:
    ```powershell
-   $MameExePath = "S:\MAME\MAME\mame.exe"
+   $MameExePath = "C:\Program Files\MAME\mame.exe"
    ```
 5. Restart Playnite
 6. The extension will appear under **Extensions → MAME Working Filter**
