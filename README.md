@@ -317,3 +317,4 @@ MAMEHelper\
 | 1.12 | Added "Hide Imperfect ROMs" menu option; reordered menu: Tag, Hide Imperfect, Hide Non-Working, Remove, Diagnose |
 | 1.13 | Added "Set Source" and "Set Category" menu options with user text input dialogs |
 | 2.0.0 | Initial release as C# — full Tag, Hide, Remove, Rename, Media, and Tools functionality |
+| 2.1.0 | Addition of Settings menu in dropdown
