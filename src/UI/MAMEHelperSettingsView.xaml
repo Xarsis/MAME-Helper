@@ -1,0 +1,139 @@
+<UserControl x:Class="MAMEHelper.UI.MAMEHelperSettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:MAMEHelper.UI"
+             mc:Ignorable="d"
+             d:DesignHeight="520" d:DesignWidth="600">
+
+    <UserControl.Resources>
+        <local:InverseBoolConverter x:Key="InverseBoolConverter"/>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="20" >
+
+            <!-- ── ROM Data Source ─────────────────────────────────────── -->
+            <TextBlock Text="ROM Data Source"
+                       FontWeight="Bold" FontSize="13"
+                       Margin="0,0,0,8"/>
+
+            <RadioButton x:Name="Radio_UseExe"
+                         Content="Use MAME executable (mame.exe -listxml)"
+                         IsChecked="{Binding Settings.UseListFile,
+                                     Converter={StaticResource InverseBoolConverter}}"
+                         Margin="0,0,0,4"/>
+
+            <Grid Margin="18,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0"
+                         Text="{Binding Settings.MameExecutablePath, UpdateSourceTrigger=PropertyChanged}"
+                         IsEnabled="{Binding Settings.UseListFile,
+                                     Converter={StaticResource InverseBoolConverter}}"
+                         VerticalContentAlignment="Center"
+                         Padding="4,2"/>
+                <Button Grid.Column="1"
+                        Content="Browse…"
+                        Margin="6,0,0,0" Padding="8,2"
+                        IsEnabled="{Binding Settings.UseListFile,
+                                    Converter={StaticResource InverseBoolConverter}}"
+                        Click="BtnBrowseMame_Click"/>
+            </Grid>
+
+            <RadioButton x:Name="Radio_UseListFile"
+                         Content="Use pre-exported XML / DAT list file"
+                         IsChecked="{Binding Settings.UseListFile}"
+                         Margin="0,0,0,4"/>
+
+            <Grid Margin="18,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0"
+                         Text="{Binding Settings.ListFilePath, UpdateSourceTrigger=PropertyChanged}"
+                         IsEnabled="{Binding Settings.UseListFile}"
+                         VerticalContentAlignment="Center"
+                         Padding="4,2"/>
+                <Button Grid.Column="1"
+                        Content="Browse…"
+                        Margin="6,0,0,0" Padding="8,2"
+                        IsEnabled="{Binding Settings.UseListFile}"
+                        Click="BtnBrowseListFile_Click"/>
+            </Grid>
+
+            <Separator Margin="0,8,0,12"/>
+
+            <!-- ── Cache ──────────────────────────────────────────────── -->
+            <TextBlock Text="Cache"
+                       FontWeight="Bold" FontSize="13"
+                       Margin="0,0,0,8"/>
+
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                <TextBlock Text="Prompt to regenerate ROM cache after"
+                           VerticalAlignment="Center"/>
+                <TextBox Width="45"
+                         Margin="8,0"
+                         Text="{Binding Settings.CacheAgeDaysBeforePrompt,
+                                UpdateSourceTrigger=PropertyChanged}"
+                         VerticalContentAlignment="Center"
+                         HorizontalContentAlignment="Center"
+                         Padding="2"/>
+                <TextBlock Text="days  (0 = always prompt, 9999 = never)"
+                           VerticalAlignment="Center"/>
+            </StackPanel>
+
+            <Separator Margin="0,0,0,12"/>
+
+            <!-- ── Media Folders ───────────────────────────────────────── -->
+            <TextBlock Text="Media Folders"
+                       FontWeight="Bold" FontSize="13"
+                       Margin="0,0,0,8"/>
+
+            <TextBlock Text="Cover images folder (PNG files named {romname}.png):"
+                       Margin="0,0,0,4"/>
+            <Grid Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0"
+                         Text="{Binding Settings.CoverImageFolder, UpdateSourceTrigger=PropertyChanged}"
+                         VerticalContentAlignment="Center"
+                         Padding="4,2"/>
+                <Button Grid.Column="1"
+                        Content="Browse…"
+                        Margin="6,0,0,0" Padding="8,2"
+                        Click="BtnBrowseCoverFolder_Click"/>
+            </Grid>
+
+            <TextBlock Text="Background images folder (PNG files named {romname}.png):"
+                       Margin="0,0,0,4"/>
+            <Grid Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0"
+                         Text="{Binding Settings.BackgroundImageFolder, UpdateSourceTrigger=PropertyChanged}"
+                         VerticalContentAlignment="Center"
+                         Padding="4,2"/>
+                <Button Grid.Column="1"
+                        Content="Browse…"
+                        Margin="6,0,0,0" Padding="8,2"
+                        Click="BtnBrowseBackgroundFolder_Click"/>
+            </Grid>
+
+            <Separator Margin="0,4,0,12"/>
+
+            <!-- ── Info note ───────────────────────────────────────────── -->
+            <TextBlock TextWrapping="Wrap" Foreground="Gray" FontSize="11"
+                       Text="Media files must be PNG format and named exactly after the ROM name (e.g. pacman.png). For clone ROMs with no matching file, MAME Helper will automatically fall back to the parent ROM's image." />
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

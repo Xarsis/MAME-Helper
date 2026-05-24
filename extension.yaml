@@ -1,6 +1,7 @@
-Id: 00000000-0000-0000-0000-000000000001
-Name: MAME Working ROM Filter
+Id: MAMEHelper_c7f3a291-4b8e-4d2a-9f1c-e83d5b762a40
+Name: MAME Helper
 Author: Custom
-Version: 1.13
-Module: MameWorkingFilter.psm1
-Type: Script
+Version: 1.0.0
+Module: MAMEHelper.dll
+Type: GenericPlugin
+Icon: icon.png
