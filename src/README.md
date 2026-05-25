@@ -176,7 +176,7 @@ Matching uses `game.Name` first, then falls back to the ROM filename from `game.
 | **Rename Selected Games (without region info)** | `sf2` → `Street Fighter II: The World Warrior` |
 
 **Note:** After renaming, ROM-name-based matching for other operations will no longer work for renamed games. Run all Tag, Hide, and Remove operations before renaming, or re-import and re-run if needed.
-
+- If your MAME games were renamed to display names **before** installing MAME Helper, run **Tools → Restore ROM Names into Notes** once after installation. This writes the original ROM name into each game's Notes field so that Tag, Hide, Remove, and catver operations can match renamed games correctly. Any existing Notes content is preserved.
 ---
 
 ### Tools
@@ -192,22 +192,29 @@ Exports a spreadsheet-compatible CSV file with one row per matched game. Prompts
 
 Useful for auditing your collection, identifying gaps, or managing your library outside Playnite.
 
+#### Restore ROM Names into Notes
+Scans every game in the library and writes the original ROM name into the Notes field using the format `MAME Helper - original name: {romname}`. Only games with a valid ROM file path that matches a known MAME ROM are updated. Any existing Notes content is preserved — the MAME Helper entry is appended on a new line. Run this once if your library was renamed before MAME Helper was installed.
+
+#### Regenerate ROM Cache
+Re-scans the MAME library (using the MAME executable) before the next scheduled refresh.
+
 ---
 
 ## Recommended First-Run Workflow
 
-1. Configure your MAME executable path (or list file path) in **Settings**
-2. Configure cover and background image folders in **Settings** if applicable
-3. Run **Tag → Tag: Driver Status** — review results in Playnite by filtering on `MAME: Non-Working`
-4. Run **Tag → Tag: Machine Type** — review `MAME: BIOS`, `MAME: Device`, `MAME: Mechanical`
-5. Run **Tag → Tag: Parent / Clone** — review `MAME: Clone`
-6. Run **Tag → Set Category…**, **Set Source…**, **Set Platform…** to organise your library
-7. Run **Tag → Tag: Year and Manufacturer** to populate release year and developer fields
-8. Once satisfied with the tagging, run **Hide → Hide Non-Working ROMs** to clean up the library view
-9. Optionally run **Hide → Hide Non-Games** and **Hide → Hide Clones**
-10. Run **Rename → Rename Selected Games** on your visible working games to give them proper display names
-11. Run **Media → Set Cover Images** and **Set Background Images** on selected games
-12. Use **Tools → Export Library to CSV** to get a full inventory of your collection
+1. If your games were **already renamed** before installing MAME Helper, run **Tools → Restore ROM Names into Notes** first before doing anything else
+2. Configure your MAME executable path (or list file path) in **Settings**
+3. Configure cover and background image folders in **Settings** if applicable
+4. Run **Tag → Tag: Driver Status** — review results in Playnite by filtering on `MAME: Non-Working`
+5. Run **Tag → Tag: Machine Type** — review `MAME: BIOS`, `MAME: Device`, `MAME: Mechanical`
+6. Run **Tag → Tag: Parent / Clone** — review `MAME: Clone`
+7. Run **Tag → Set Category…**, **Set Source…**, **Set Platform…** to organise your library
+8. Run **Tag → Tag: Year and Manufacturer** to populate release year and developer fields
+9. Once satisfied with the tagging, run **Hide → Hide Non-Working ROMs** to clean up the library view
+10. Optionally run **Hide → Hide Non-Games** and **Hide → Hide Clones**
+11. Run **Rename → Rename Selected Games** on your visible working games to give them proper display names
+12. Run **Media → Set Cover Images** and **Set Background Images** on selected games
+13. Use **Tools → Export Library to CSV** to get a full inventory of your collection
 
 ---
 
@@ -225,34 +232,36 @@ Useful for auditing your collection, identifying gaps, or managing your library 
 
 ```
 MAMEHelper\
-├── extension.yaml              Plugin manifest
-├── icon.png                    Plugin icon
-├── README.md                   This file
+├── extension.yaml                  Plugin manifest
+├── icon.png                        Plugin icon
+├── README.md                       This file
+├── catver.ini                      Community-created categories of ROMs (from https://www.progettosnaps.net/catver/)
 └── src\
-    ├── MAMEHelper.csproj       Visual Studio project file
-    ├── MAMEHelperPlugin.cs     Plugin entry point and menu wiring
+    ├── MAMEHelper.csproj           Visual Studio project file
+    ├── MAMEHelperPlugin.cs         Plugin entry point and menu wiring
     ├── Models\
-    │   ├── RomsetMachine.cs    ROM data model
-    │   └── MAMEHelperSettings.cs  Persisted settings model
+    │   ├── RomsetMachine.cs        ROM data model
+    │   └── MAMEHelperSettings.cs   Persisted settings model
     ├── Services\
-    │   ├── RomDataService.cs   XML parsing, mame.exe execution, caching
-    │   ├── GameTagger.cs       Tag operations
-    │   ├── GameHider.cs        Hide / Unhide operations
-    │   ├── GameRemover.cs      Permanent removal operations
-    │   ├── GameRenamer.cs      ROM name → display name rename
-    │   ├── GameMediaManager.cs Cover and background image import
-    │   ├── GameMetadataSetter.cs  Category, Source, Platform, Year, Manufacturer
+    |   ├── CatverParser.cs         Parse based on included catver.ini
+    │   ├── RomDataService.cs       XML parsing, mame.exe execution, caching
+    │   ├── GameTagger.cs           Tag operations
+    │   ├── GameHider.cs            Hide / Unhide operations
+    │   ├── GameRemover.cs          Permanent removal operations
+    │   ├── GameRenamer.cs          ROM name → display name rename
+    │   ├── GameMediaManager.cs     Cover and background image import
+    │   ├── GameMetadataSetter.cs   Category, Source, Platform, Year, Manufacturer
     │   ├── GamelistXmlExporter.cs  EmulationStation gamelist.xml export
-    │   ├── CsvExporter.cs      CSV library export
-    │   └── MissingMediaFinder.cs  Missing media report
-    ├── Properties\
-    │   └── AssemblyInfo.cs
+    │   ├── CsvExporter.cs          CSV library export
+    │   ├── MissingMediaFinder.cs   Missing media report
+    |   ├── MatchingHelper.cs       Match assistance for renamed ROMs
+    │   └── RomIdRestorer.cs        Restore renamed ROMs to original name
     └── UI\
         ├── MAMEHelperSettingsView.xaml      Settings page layout
         ├── MAMEHelperSettingsView.xaml.cs   Settings page code-behind
         ├── MAMEHelperSettingsViewModel.cs   Settings page view model
         ├── InputDialog.xaml                 Text input dialog layout
-        └── InputDialog.xaml.cs             Text input dialog code-behind
+        └── InputDialog.xaml.cs              Text input dialog code-behind
 ```
 
 ---
@@ -325,3 +334,6 @@ MAMEHelper\
 | 2.1.5 | Added additional folders for media in case first cover or background folders were blank for that ROM
 | 2.1.6 | Added option to force regenerate ROM cache
 | 2.2.0 | Added option to hide or remove files based on catver.ini (from https://www.progettosnaps.net/catver/)
+| 2.2.1 | Added option to tag ROMs based on catver.ini and updated tag removal logic
+| 2.3.0 | Updated renaming logic to use Notes field, preserving original data
+| 2.3.1 | Updated to pass Toolbox manifest verification

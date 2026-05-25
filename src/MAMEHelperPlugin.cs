@@ -17,7 +17,7 @@ namespace MAMEHelper
         // ── Identity ──────────────────────────────────────────────────────────
 
         public override Guid Id { get; } =
-            new Guid("c7f3a291-4b8e-4d2a-9f1c-e83d5b762a40");
+            new Guid("77ed2204-c7d1-48cc-9e62-034fd035e803");
 
         // ── State ─────────────────────────────────────────────────────────────
 
@@ -137,7 +137,8 @@ namespace MAMEHelper
         /// </summary>
         private void OpenSettings()
         {
-            var vm = new MAMEHelperSettingsViewModel(this);
+            // Use the cached viewmodel, not a new instance.
+            var vm = _settingsViewModel;
             var view = new MAMEHelperSettingsView(vm);
 
             var window = PlayniteApi.Dialogs.CreateWindow(new WindowCreationOptions

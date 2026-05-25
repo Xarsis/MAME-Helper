@@ -1,0 +1,7 @@
+Id: MAME-Helper_77ed2204-c7d1-48cc-9e62-034fd035e803
+Name: MAME Helper
+Author: Xarsis
+Version: 2.3.1
+Module: MAMEHelper.dll
+Type: GenericPlugin
+Icon: icon.png
