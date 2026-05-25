@@ -6,13 +6,14 @@ using System.Windows.Data;
 
 namespace MAMEHelper.UI
 {
-    /// <summary>Converts bool to its inverse — used to enable/disable controls based on radio selection.</summary>
     public class InverseBoolConverter : IValueConverter
     {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        public object Convert(object value, Type targetType,
+            object parameter, CultureInfo culture)
             => value is bool b ? !b : value;
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        public object ConvertBack(object value, Type targetType,
+            object parameter, CultureInfo culture)
             => value is bool b ? !b : value;
     }
 
@@ -27,6 +28,8 @@ namespace MAMEHelper.UI
             DataContext = _vm;
         }
 
+        // ── Browse buttons ────────────────────────────────────────────────────
+
         private void BtnBrowseMame_Click(object sender, RoutedEventArgs e)
             => _vm.BrowseMameExecutable();
 
@@ -36,7 +39,27 @@ namespace MAMEHelper.UI
         private void BtnBrowseCoverFolder_Click(object sender, RoutedEventArgs e)
             => _vm.BrowseCoverImageFolder();
 
+        private void BtnBrowseCoverFolder2_Click(object sender, RoutedEventArgs e)
+            => _vm.BrowseCoverImageFolder2();
+
         private void BtnBrowseBackgroundFolder_Click(object sender, RoutedEventArgs e)
             => _vm.BrowseBackgroundImageFolder();
+
+        private void BtnBrowseBackgroundFolder2_Click(object sender, RoutedEventArgs e)
+            => _vm.BrowseBackgroundImageFolder2();
+
+        // ── Save / Cancel ─────────────────────────────────────────────────────
+
+        private void BtnSave_Click(object sender, RoutedEventArgs e)
+        {
+            var window = Window.GetWindow(this);
+            if (window != null) window.DialogResult = true;
+        }
+
+        private void BtnCancel_Click(object sender, RoutedEventArgs e)
+        {
+            var window = Window.GetWindow(this);
+            if (window != null) window.DialogResult = false;
+        }
     }
 }

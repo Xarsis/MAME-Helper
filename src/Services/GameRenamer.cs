@@ -85,6 +85,14 @@ namespace MAMEHelper.Services
                             continue;
                         }
 
+                        // Preserve the original ROM name in GameId before renaming,
+                        // so tag/filter operations can still match after a rename.
+                        if (string.IsNullOrEmpty(game.GameId) ||
+                            game.GameId == game.Name)
+                        {
+                            game.GameId = machine.RomName;
+                        }
+
                         _logger.Info($"MAMEHelper: Rename '{game.Name}' → '{newName}'");
                         game.Name = newName;
                         _api.Database.Games.Update(game);
@@ -111,12 +119,12 @@ namespace MAMEHelper.Services
         private static RomsetMachine FindMachine(
             Dictionary<string, RomsetMachine> romData, Game game)
         {
-            // Try game.Name first (works after import, before any renaming).
-            string key = game.Name?.ToLower().Trim();
+            // Check GameId first (previously saved ROM name).
+            string key = MatchingHelper.ResolveRomKey(game);
             if (key != null && romData.TryGetValue(key, out var m1))
                 return m1;
 
-            // Fall back to ROM filename (useful if the game was already partially renamed).
+            // Fall back to ROM filename from path.
             if (game.Roms != null && game.Roms.Count > 0)
             {
                 string romKey = Path.GetFileNameWithoutExtension(game.Roms[0].Path)

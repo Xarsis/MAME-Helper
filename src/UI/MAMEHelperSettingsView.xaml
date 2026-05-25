@@ -5,22 +5,25 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:MAMEHelper.UI"
              mc:Ignorable="d"
-             d:DesignHeight="520" d:DesignWidth="600">
+             d:DesignHeight="680" d:DesignWidth="620">
 
     <UserControl.Resources>
         <local:InverseBoolConverter x:Key="InverseBoolConverter"/>
     </UserControl.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="20" >
+    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                  Background="{DynamicResource PopupBackgroundBrush}">
+        <StackPanel Margin="20">
 
             <!-- ── ROM Data Source ─────────────────────────────────────── -->
             <TextBlock Text="ROM Data Source"
                        FontWeight="Bold" FontSize="13"
+                       Foreground="{DynamicResource TextBrush}"
                        Margin="0,0,0,8"/>
 
             <RadioButton x:Name="Radio_UseExe"
                          Content="Use MAME executable (mame.exe -listxml)"
+                         Foreground="{DynamicResource TextBrush}"
                          IsChecked="{Binding Settings.UseListFile,
                                      Converter={StaticResource InverseBoolConverter}}"
                          Margin="0,0,0,4"/>
@@ -31,9 +34,13 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBox Grid.Column="0"
-                         Text="{Binding Settings.MameExecutablePath, UpdateSourceTrigger=PropertyChanged}"
+                         Text="{Binding Settings.MameExecutablePath,
+                                UpdateSourceTrigger=PropertyChanged}"
                          IsEnabled="{Binding Settings.UseListFile,
                                      Converter={StaticResource InverseBoolConverter}}"
+                         Background="{DynamicResource TextBoxBackgroundBrush}"
+                         Foreground="{DynamicResource TextBrush}"
+                         BorderBrush="{DynamicResource TextBoxBorderBrush}"
                          VerticalContentAlignment="Center"
                          Padding="4,2"/>
                 <Button Grid.Column="1"
@@ -46,6 +53,7 @@
 
             <RadioButton x:Name="Radio_UseListFile"
                          Content="Use pre-exported XML / DAT list file"
+                         Foreground="{DynamicResource TextBrush}"
                          IsChecked="{Binding Settings.UseListFile}"
                          Margin="0,0,0,4"/>
 
@@ -55,8 +63,12 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBox Grid.Column="0"
-                         Text="{Binding Settings.ListFilePath, UpdateSourceTrigger=PropertyChanged}"
+                         Text="{Binding Settings.ListFilePath,
+                                UpdateSourceTrigger=PropertyChanged}"
                          IsEnabled="{Binding Settings.UseListFile}"
+                         Background="{DynamicResource TextBoxBackgroundBrush}"
+                         Foreground="{DynamicResource TextBrush}"
+                         BorderBrush="{DynamicResource TextBoxBorderBrush}"
                          VerticalContentAlignment="Center"
                          Padding="4,2"/>
                 <Button Grid.Column="1"
@@ -66,43 +78,57 @@
                         Click="BtnBrowseListFile_Click"/>
             </Grid>
 
-            <Separator Margin="0,8,0,12"/>
+            <Separator Margin="0,8,0,12"
+                       Background="{DynamicResource SeparatorBrush}"/>
 
             <!-- ── Cache ──────────────────────────────────────────────── -->
             <TextBlock Text="Cache"
                        FontWeight="Bold" FontSize="13"
+                       Foreground="{DynamicResource TextBrush}"
                        Margin="0,0,0,8"/>
 
             <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
                 <TextBlock Text="Prompt to regenerate ROM cache after"
+                           Foreground="{DynamicResource TextBrush}"
                            VerticalAlignment="Center"/>
-                <TextBox Width="45"
-                         Margin="8,0"
+                <TextBox Width="45" Margin="8,0"
                          Text="{Binding Settings.CacheAgeDaysBeforePrompt,
                                 UpdateSourceTrigger=PropertyChanged}"
+                         Background="{DynamicResource TextBoxBackgroundBrush}"
+                         Foreground="{DynamicResource TextBrush}"
+                         BorderBrush="{DynamicResource TextBoxBorderBrush}"
                          VerticalContentAlignment="Center"
                          HorizontalContentAlignment="Center"
                          Padding="2"/>
                 <TextBlock Text="days  (0 = always prompt, 9999 = never)"
+                           Foreground="{DynamicResource TextBrush}"
                            VerticalAlignment="Center"/>
             </StackPanel>
 
-            <Separator Margin="0,0,0,12"/>
+            <Separator Margin="0,0,0,12"
+                       Background="{DynamicResource SeparatorBrush}"/>
 
             <!-- ── Media Folders ───────────────────────────────────────── -->
             <TextBlock Text="Media Folders"
                        FontWeight="Bold" FontSize="13"
+                       Foreground="{DynamicResource TextBrush}"
                        Margin="0,0,0,8"/>
 
-            <TextBlock Text="Cover images folder (PNG files named {romname}.png):"
+            <!-- Cover — primary -->
+            <TextBlock Text="Cover images — primary folder:"
+                       Foreground="{DynamicResource TextBrush}"
                        Margin="0,0,0,4"/>
-            <Grid Margin="0,0,0,10">
+            <Grid Margin="0,0,0,6">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBox Grid.Column="0"
-                         Text="{Binding Settings.CoverImageFolder, UpdateSourceTrigger=PropertyChanged}"
+                         Text="{Binding Settings.CoverImageFolder,
+                                UpdateSourceTrigger=PropertyChanged}"
+                         Background="{DynamicResource TextBoxBackgroundBrush}"
+                         Foreground="{DynamicResource TextBrush}"
+                         BorderBrush="{DynamicResource TextBoxBorderBrush}"
                          VerticalContentAlignment="Center"
                          Padding="4,2"/>
                 <Button Grid.Column="1"
@@ -111,15 +137,44 @@
                         Click="BtnBrowseCoverFolder_Click"/>
             </Grid>
 
-            <TextBlock Text="Background images folder (PNG files named {romname}.png):"
+            <!-- Cover — secondary -->
+            <TextBlock Text="Cover images — secondary folder (fallback):"
+                       Foreground="{DynamicResource TextBrushDarker}"
                        Margin="0,0,0,4"/>
-            <Grid Margin="0,0,0,10">
+            <Grid Margin="0,0,0,14">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBox Grid.Column="0"
-                         Text="{Binding Settings.BackgroundImageFolder, UpdateSourceTrigger=PropertyChanged}"
+                         Text="{Binding Settings.CoverImageFolder2,
+                                UpdateSourceTrigger=PropertyChanged}"
+                         Background="{DynamicResource TextBoxBackgroundBrush}"
+                         Foreground="{DynamicResource TextBrush}"
+                         BorderBrush="{DynamicResource TextBoxBorderBrush}"
+                         VerticalContentAlignment="Center"
+                         Padding="4,2"/>
+                <Button Grid.Column="1"
+                        Content="Browse…"
+                        Margin="6,0,0,0" Padding="8,2"
+                        Click="BtnBrowseCoverFolder2_Click"/>
+            </Grid>
+
+            <!-- Background — primary -->
+            <TextBlock Text="Background images — primary folder:"
+                       Foreground="{DynamicResource TextBrush}"
+                       Margin="0,0,0,4"/>
+            <Grid Margin="0,0,0,6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0"
+                         Text="{Binding Settings.BackgroundImageFolder,
+                                UpdateSourceTrigger=PropertyChanged}"
+                         Background="{DynamicResource TextBoxBackgroundBrush}"
+                         Foreground="{DynamicResource TextBrush}"
+                         BorderBrush="{DynamicResource TextBoxBorderBrush}"
                          VerticalContentAlignment="Center"
                          Padding="4,2"/>
                 <Button Grid.Column="1"
@@ -128,11 +183,52 @@
                         Click="BtnBrowseBackgroundFolder_Click"/>
             </Grid>
 
-            <Separator Margin="0,4,0,12"/>
+            <!-- Background — secondary -->
+            <TextBlock Text="Background images — secondary folder (fallback):"
+                       Foreground="{DynamicResource TextBrushDarker}"
+                       Margin="0,0,0,4"/>
+            <Grid Margin="0,0,0,14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0"
+                         Text="{Binding Settings.BackgroundImageFolder2,
+                                UpdateSourceTrigger=PropertyChanged}"
+                         Background="{DynamicResource TextBoxBackgroundBrush}"
+                         Foreground="{DynamicResource TextBrush}"
+                         BorderBrush="{DynamicResource TextBoxBorderBrush}"
+                         VerticalContentAlignment="Center"
+                         Padding="4,2"/>
+                <Button Grid.Column="1"
+                        Content="Browse…"
+                        Margin="6,0,0,0" Padding="8,2"
+                        Click="BtnBrowseBackgroundFolder2_Click"/>
+            </Grid>
+
+            <Separator Margin="0,4,0,12"
+                       Background="{DynamicResource SeparatorBrush}"/>
 
             <!-- ── Info note ───────────────────────────────────────────── -->
-            <TextBlock TextWrapping="Wrap" Foreground="Gray" FontSize="11"
-                       Text="Media files must be PNG format and named exactly after the ROM name (e.g. pacman.png). For clone ROMs with no matching file, MAME Helper will automatically fall back to the parent ROM's image." />
+            <TextBlock TextWrapping="Wrap"
+                       Foreground="{DynamicResource TextBrushDarker}"
+                       FontSize="11"
+                       Text="Media files must be PNG format and named exactly after the ROM name (e.g. pacman.png). The primary folder is checked first. If no match is found there, the secondary folder is checked. For clone ROMs with no match in either folder, MAME Helper falls back to the parent ROM's image." />
+
+            <!-- ── Save / Cancel ───────────────────────────────────────── -->
+            <Separator Margin="0,16,0,12"
+                       Background="{DynamicResource SeparatorBrush}"/>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="BtnSave"
+                        Content="Save"
+                        Width="90" Margin="0,0,8,0" Padding="8,4"
+                        Click="BtnSave_Click"/>
+                <Button x:Name="BtnCancel"
+                        Content="Cancel"
+                        Width="90" Padding="8,4"
+                        Click="BtnCancel_Click"/>
+            </StackPanel>
 
         </StackPanel>
     </ScrollViewer>

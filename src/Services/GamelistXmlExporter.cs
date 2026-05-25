@@ -32,10 +32,10 @@ namespace MAMEHelper.Services
 
             int exported = 0;
             int skipped  = 0;
+            var games = _api.Database.Games.ToList();
 
             _api.Dialogs.ActivateGlobalProgress(args =>
             {
-                var games = _api.Database.Games.ToList();
                 args.ProgressMaxValue = games.Count;
 
                 var xmlSettings = new XmlWriterSettings
@@ -59,7 +59,7 @@ namespace MAMEHelper.Services
                             args.CurrentProgressValue++;
                             args.Text = $"Exporting ({args.CurrentProgressValue}/{games.Count})\n{game.Name}";
 
-                            string key = game.Name?.ToLower().Trim();
+                            string key = MatchingHelper.ResolveRomKey(game);
                             if (key == null || !romData.TryGetValue(key, out var machine))
                             {
                                 skipped++;

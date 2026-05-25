@@ -15,15 +15,15 @@ namespace MAMEHelper.Services
     {
         // ── Tag name constants ────────────────────────────────────────────────
 
-        public const string TagWorking    = "MAME: Working";
-        public const string TagImperfect  = "MAME: Imperfect";
+        public const string TagWorking = "MAME: Working";
+        public const string TagImperfect = "MAME: Imperfect";
         public const string TagNonWorking = "MAME: Non-Working";
-        public const string TagParent     = "MAME: Parent";
-        public const string TagClone      = "MAME: Clone";
-        public const string TagBios       = "MAME: BIOS";
-        public const string TagDevice     = "MAME: Device";
+        public const string TagParent = "MAME: Parent";
+        public const string TagClone = "MAME: Clone";
+        public const string TagBios = "MAME: BIOS";
+        public const string TagDevice = "MAME: Device";
         public const string TagMechanical = "MAME: Mechanical";
-        public const string TagSample     = "MAME: Sample";
+        public const string TagSample = "MAME: Sample";
 
         public static readonly IReadOnlyList<string> AllMameTags = new[]
         {
@@ -41,25 +41,17 @@ namespace MAMEHelper.Services
 
         // ── Public operations ─────────────────────────────────────────────────
 
-        /// <summary>Tags all matched games with Working / Imperfect / Non-Working.</summary>
         public void TagDriverStatus(Dictionary<string, RomsetMachine> romData)
             => RunTagOperation("Tag: Driver Status", romData, TagDriverStatusCore);
 
-        /// <summary>Tags all matched games with BIOS / Device / Mechanical / Sample.</summary>
         public void TagMachineType(Dictionary<string, RomsetMachine> romData)
             => RunTagOperation("Tag: Machine Type", romData, TagMachineTypeCore);
 
-        /// <summary>Tags all matched games with Parent / Clone.</summary>
         public void TagParentClone(Dictionary<string, RomsetMachine> romData)
             => RunTagOperation("Tag: Parent/Clone", romData, TagParentCloneCore);
 
-        /// <summary>
-        /// Removes all MAME: prefixed tags from every game in the library.
-        /// Does not require ROM data.
-        /// </summary>
         public void ClearAllMameTags()
         {
-            // Build set of tag IDs to strip.
             var tagIdsToRemove = new HashSet<Guid>();
             foreach (var tagName in AllMameTags)
             {
@@ -76,35 +68,30 @@ namespace MAMEHelper.Services
             }
 
             int cleared = 0;
+            var games = _api.Database.Games.ToList();
 
             _api.Dialogs.ActivateGlobalProgress(args =>
             {
-                var games = _api.Database.Games.ToList();
                 args.ProgressMaxValue = games.Count;
 
-                _api.Database.BeginBufferUpdate();
-                try
+                foreach (var game in games)
                 {
-                    foreach (var game in games)
+                    if (args.CancelToken.IsCancellationRequested) break;
+
+                    args.CurrentProgressValue++;
+                    args.Text = $"Clearing tags ({args.CurrentProgressValue}/{games.Count})\n{game.Name}";
+
+                    if (game.TagIds == null || game.TagIds.Count == 0) continue;
+
+                    int before = game.TagIds.Count;
+                    game.TagIds.RemoveAll(id => tagIdsToRemove.Contains(id));
+
+                    if (game.TagIds.Count != before)
                     {
-                        if (args.CancelToken.IsCancellationRequested) break;
-
-                        args.CurrentProgressValue++;
-                        args.Text = $"Clearing tags: {game.Name}";
-
-                        if (game.TagIds == null || game.TagIds.Count == 0) continue;
-
-                        int before = game.TagIds.Count;
-                        game.TagIds.RemoveAll(id => tagIdsToRemove.Contains(id));
-
-                        if (game.TagIds.Count != before)
-                        {
-                            _api.Database.Games.Update(game);
-                            cleared++;
-                        }
+                        _api.Database.Games.Update(game);
+                        cleared++;
                     }
                 }
-                finally { _api.Database.EndBufferUpdate(); }
 
             }, new GlobalProgressOptions("MAME Helper: Clearing MAME tags…", true));
 
@@ -117,13 +104,12 @@ namespace MAMEHelper.Services
 
         private void TagDriverStatusCore(Game game, RomsetMachine machine)
         {
-            // Remove the three driver-status tags then add the correct one.
             RemoveTags(game, TagWorking, TagImperfect, TagNonWorking);
 
             switch (machine.DriverStatus?.ToLower())
             {
-                case "good":        AddTag(game, TagWorking);    break;
-                case "imperfect":   AddTag(game, TagImperfect);  break;
+                case "good": AddTag(game, TagWorking); break;
+                case "imperfect": AddTag(game, TagImperfect); break;
                 case "preliminary": AddTag(game, TagNonWorking); break;
             }
         }
@@ -132,10 +118,10 @@ namespace MAMEHelper.Services
         {
             RemoveTags(game, TagBios, TagDevice, TagMechanical, TagSample);
 
-            if (machine.IsBios)       AddTag(game, TagBios);
-            if (machine.IsDevice)     AddTag(game, TagDevice);
+            if (machine.IsBios) AddTag(game, TagBios);
+            if (machine.IsDevice) AddTag(game, TagDevice);
             if (machine.IsMechanical) AddTag(game, TagMechanical);
-            if (machine.IsSample)     AddTag(game, TagSample);
+            if (machine.IsSample) AddTag(game, TagSample);
         }
 
         private void TagParentCloneCore(Game game, RomsetMachine machine)
@@ -144,48 +130,42 @@ namespace MAMEHelper.Services
             AddTag(game, machine.IsClone ? TagClone : TagParent);
         }
 
-        // ── Shared runner ────────────────────────────────────────────────────
+        // ── Shared runner ─────────────────────────────────────────────────────
 
         private void RunTagOperation(
             string operationName,
             Dictionary<string, RomsetMachine> romData,
             Action<Game, RomsetMachine> tagAction)
         {
-            int tagged  = 0;
+            int tagged = 0;
             int skipped = 0;
+            var games = _api.Database.Games.ToList();
 
             _api.Dialogs.ActivateGlobalProgress(args =>
             {
-                var games = _api.Database.Games.ToList();
                 args.ProgressMaxValue = games.Count;
 
-                _api.Database.BeginBufferUpdate();
-                try
+                foreach (var game in games)
                 {
-                    foreach (var game in games)
+                    if (args.CancelToken.IsCancellationRequested) break;
+
+                    args.CurrentProgressValue++;
+                    args.Text = $"{operationName} ({args.CurrentProgressValue}/{games.Count})\n{game.Name}";
+
+                    string key = MatchingHelper.ResolveRomKey(game);
+                    if (key == null || !romData.TryGetValue(key, out var machine))
                     {
-                        if (args.CancelToken.IsCancellationRequested) break;
-
-                        args.CurrentProgressValue++;
-                        args.Text = $"{operationName} ({args.CurrentProgressValue}/{games.Count})\n{game.Name}";
-
-                        string key = game.Name?.ToLower().Trim();
-                        if (key == null || !romData.TryGetValue(key, out var machine))
-                        {
-                            skipped++;
-                            continue;
-                        }
-
-                        if (game.TagIds == null)
-                            game.TagIds = new List<Guid>();
-
-
-                        tagAction(game, machine);
-                        _api.Database.Games.Update(game);
-                        tagged++;
+                        skipped++;
+                        continue;
                     }
+
+                    if (game.TagIds == null)
+                        game.TagIds = new List<Guid>();
+
+                    tagAction(game, machine);
+                    _api.Database.Games.Update(game);
+                    tagged++;
                 }
-                finally { _api.Database.EndBufferUpdate(); }
 
             }, new GlobalProgressOptions($"MAME Helper: {operationName}…", true));
 
@@ -196,15 +176,13 @@ namespace MAMEHelper.Services
 
         // ── Tag helpers ───────────────────────────────────────────────────────
 
-        /// <summary>Adds a tag to a game, creating the tag in the DB if needed.</summary>
         private void AddTag(Game game, string tagName)
         {
-            var tag = _api.Database.Tags.Add(tagName); // Add is idempotent
+            var tag = _api.Database.Tags.Add(tagName);
             if (!game.TagIds.Contains(tag.Id))
                 game.TagIds.Add(tag.Id);
         }
 
-        /// <summary>Removes one or more named tags from a game if present.</summary>
         private void RemoveTags(Game game, params string[] tagNames)
         {
             if (game.TagIds == null || game.TagIds.Count == 0) return;

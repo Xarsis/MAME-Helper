@@ -29,10 +29,22 @@ namespace MAMEHelper.Models
 
         // ── Media folders ────────────────────────────────────────────────────
 
-        /// <summary>Folder to scan for cover images (PNG files named {romname}.png).</summary>
+        /// <summary>Primary folder to scan for cover images (PNG files named {romname}.png).</summary>
         public string CoverImageFolder { get; set; } = string.Empty;
 
-        /// <summary>Folder to scan for background images (PNG files named {romname}.png).</summary>
+        /// <summary>
+        /// Secondary folder to scan for cover images.
+        /// Checked only when no match is found in CoverImageFolder.
+        /// </summary>
+        public string CoverImageFolder2 { get; set; } = string.Empty;
+
+        /// <summary>Primary folder to scan for background images (PNG files named {romname}.png).</summary>
         public string BackgroundImageFolder { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Secondary folder to scan for background images.
+        /// Checked only when no match is found in BackgroundImageFolder.
+        /// </summary>
+        public string BackgroundImageFolder2 { get; set; } = string.Empty;
     }
 }

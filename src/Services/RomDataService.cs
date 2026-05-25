@@ -240,7 +240,6 @@ namespace MAMEHelper.Services
                     if (xmlPath == null || progressArgs.CancelToken.IsCancellationRequested)
                         return;
 
-                    progressArgs.Text = "MAME Helper: Parsing XML…";
                     result = ParseMameXml(xmlPath, progressArgs);
 
                     // If we generated a temp file, clean it up.
@@ -266,6 +265,7 @@ namespace MAMEHelper.Services
         /// <summary>
         /// Runs mame.exe -listxml, redirecting stdout to a temp file.
         /// Returns the temp file path, or null on failure.
+        /// Updates progress text with live byte count as data streams in.
         /// </summary>
         private string RunMameListXml(GlobalProgressActionArgs progressArgs)
         {
@@ -275,22 +275,24 @@ namespace MAMEHelper.Services
             {
                 var psi = new ProcessStartInfo
                 {
-                    FileName               = _settings.MameExecutablePath,
-                    Arguments              = "-listxml",
+                    FileName = _settings.MameExecutablePath,
+                    Arguments = "-listxml",
                     RedirectStandardOutput = true,
-                    RedirectStandardError  = true,
-                    UseShellExecute        = false,
-                    CreateNoWindow         = true
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
                 };
 
                 using (var process = new Process { StartInfo = psi })
-                using (var outFile = new FileStream(tempFile, FileMode.Create, FileAccess.Write, FileShare.None, 65536))
+                using (var outFile = new FileStream(
+                    tempFile, FileMode.Create, FileAccess.Write, FileShare.None, 65536))
                 {
                     process.Start();
 
                     var buffer = new byte[65536];
                     var stdOut = process.StandardOutput.BaseStream;
                     int bytesRead;
+                    long totalBytes = 0;
 
                     while ((bytesRead = stdOut.Read(buffer, 0, buffer.Length)) > 0)
                     {
@@ -300,7 +302,15 @@ namespace MAMEHelper.Services
                             TryDeleteFile(tempFile);
                             return null;
                         }
+
                         outFile.Write(buffer, 0, bytesRead);
+                        totalBytes += bytesRead;
+
+                        // Update progress text every 64 KB so the UI stays responsive
+                        // without updating on every single read.
+                        progressArgs.Text =
+                            $"MAME Helper: Running mame.exe -listxml…\n" +
+                            $"Received: {FormatBytes(totalBytes)}  (typically 200–300 MB total)";
                     }
 
                     process.WaitForExit();
@@ -308,12 +318,14 @@ namespace MAMEHelper.Services
                     if (process.ExitCode != 0)
                     {
                         string err = process.StandardError.ReadToEnd();
-                        throw new Exception($"mame.exe exited with code {process.ExitCode}.\n{err}");
+                        throw new Exception(
+                            $"mame.exe exited with code {process.ExitCode}.\n{err}");
                     }
                 }
 
                 if (!File.Exists(tempFile) || new FileInfo(tempFile).Length == 0)
-                    throw new Exception("mame.exe produced no output. Check your MAME installation.");
+                    throw new Exception(
+                        "mame.exe produced no output. Check your MAME installation.");
 
                 return tempFile;
             }
@@ -322,6 +334,16 @@ namespace MAMEHelper.Services
                 TryDeleteFile(tempFile);
                 throw;
             }
+        }
+
+        /// <summary>Formats a byte count as a human-readable string, e.g. "142.3 MB".</summary>
+        private static string FormatBytes(long bytes)
+        {
+            if (bytes >= 1_048_576)
+                return $"{bytes / 1_048_576.0:F1} MB";
+            if (bytes >= 1_024)
+                return $"{bytes / 1_024.0:F1} KB";
+            return $"{bytes} B";
         }
 
         /// <summary>
@@ -391,6 +413,9 @@ namespace MAMEHelper.Services
                             !string.IsNullOrEmpty(current.RomName))
                         {
                             result[current.RomName] = current;
+
+                            if (result.Count % 1000 == 0)
+                                progressArgs.Text = $"MAME Helper: Parsing XML… ({result.Count:N0} machines so far)";
                         }
                         current = null;
                     }

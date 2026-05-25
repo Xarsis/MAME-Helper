@@ -12,8 +12,11 @@ namespace MAMEHelper.Services
     /// Sets cover or background images on selected games by matching ROM names
     /// to PNG files in user-configured folders.
     ///
-    /// For clone ROMs with no direct image match, automatically falls back to
-    /// the parent ROM's image file.
+    /// Lookup order for each game:
+    ///   1. Primary folder — direct ROM name match
+    ///   2. Primary folder — parent ROM name (for clones)
+    ///   3. Secondary folder — direct ROM name match
+    ///   4. Secondary folder — parent ROM name (for clones)
     ///
     /// Operates on selected games only.
     /// </summary>
@@ -30,26 +33,29 @@ namespace MAMEHelper.Services
 
         public void SetCoverImages(
             Dictionary<string, RomsetMachine> romData,
-            string imageFolder)
-            => RunMediaOperation(romData, imageFolder, MediaType.Cover);
+            string primaryFolder,
+            string secondaryFolder)
+            => RunMediaOperation(romData, primaryFolder, secondaryFolder, MediaType.Cover);
 
         public void SetBackgroundImages(
             Dictionary<string, RomsetMachine> romData,
-            string imageFolder)
-            => RunMediaOperation(romData, imageFolder, MediaType.Background);
+            string primaryFolder,
+            string secondaryFolder)
+            => RunMediaOperation(romData, primaryFolder, secondaryFolder, MediaType.Background);
 
         // ── Runner ────────────────────────────────────────────────────────────
 
         private void RunMediaOperation(
             Dictionary<string, RomsetMachine> romData,
-            string imageFolder,
+            string primaryFolder,
+            string secondaryFolder,
             MediaType mediaType)
         {
-            // Validate folder.
-            if (string.IsNullOrWhiteSpace(imageFolder) || !Directory.Exists(imageFolder))
+            // Validate at least the primary folder.
+            if (string.IsNullOrWhiteSpace(primaryFolder) || !Directory.Exists(primaryFolder))
             {
                 _api.Dialogs.ShowErrorMessage(
-                    $"Image folder not found:\n{imageFolder}\n\n" +
+                    $"Primary image folder not found:\n{primaryFolder}\n\n" +
                     "Go to Extensions → MAME Helper → Settings to configure the folder.",
                     "MAME Helper");
                 return;
@@ -64,12 +70,16 @@ namespace MAMEHelper.Services
                 return;
             }
 
-            // Build a fast lookup of available image files (lowercase romname → full path).
-            var availableImages = BuildImageLookup(imageFolder);
-            if (availableImages.Count == 0)
+            // Build image lookups. Secondary is optional — empty dict if not configured.
+            var primaryImages   = BuildImageLookup(primaryFolder);
+            var secondaryImages = IsValidFolder(secondaryFolder)
+                ? BuildImageLookup(secondaryFolder)
+                : new Dictionary<string, string>();
+
+            if (primaryImages.Count == 0 && secondaryImages.Count == 0)
             {
                 _api.Dialogs.ShowMessage(
-                    $"No PNG files found in:\n{imageFolder}",
+                    $"No PNG files found in either configured folder.",
                     "MAME Helper");
                 return;
             }
@@ -94,20 +104,39 @@ namespace MAMEHelper.Services
                         args.Text = $"Setting {typeName} images " +
                                     $"({args.CurrentProgressValue}/{selected.Count})\n{game.Name}";
 
-                        // Find the ROM name key for this game.
-                        string key = game.Name?.ToLower().Trim();
+                        string key = MatchingHelper.ResolveRomKey(game);
                         if (key == null)
                         {
                             noMatch++;
                             continue;
                         }
 
-                        // Locate the image file, falling back to parent ROM for clones.
-                        string imagePath = FindImagePath(availableImages, romData, key);
+                        // Resolve parent ROM name for clone fallback.
+                        string parentKey = null;
+                        if (romData.TryGetValue(key, out var machine) &&
+                            machine.IsClone &&
+                            !string.IsNullOrEmpty(machine.CloneOf))
+                        {
+                            parentKey = machine.CloneOf;
+                        }
+
+                        // Search order:
+                        // 1. Primary — direct match
+                        // 2. Primary — parent match
+                        // 3. Secondary — direct match
+                        // 4. Secondary — parent match
+                        string imagePath =
+                            FindInLookup(primaryImages, key) ??
+                            FindInLookup(primaryImages, parentKey) ??
+                            FindInLookup(secondaryImages, key) ??
+                            FindInLookup(secondaryImages, parentKey);
+
                         if (imagePath == null)
                         {
                             missing++;
-                            _logger.Info($"MAMEHelper: No {typeName} image for '{game.Name}'.");
+                            _logger.Info(
+                                $"MAMEHelper: No {typeName} image for '{game.Name}' " +
+                                $"in primary or secondary folder.");
                             continue;
                         }
 
@@ -130,6 +159,9 @@ namespace MAMEHelper.Services
 
         // ── Helpers ───────────────────────────────────────────────────────────
 
+        private static bool IsValidFolder(string path)
+            => !string.IsNullOrWhiteSpace(path) && Directory.Exists(path);
+
         /// <summary>
         /// Builds a dictionary of lowercase-romname → full file path
         /// for all PNG files in the given folder.
@@ -146,28 +178,14 @@ namespace MAMEHelper.Services
         }
 
         /// <summary>
-        /// Attempts to find an image for the given ROM name.
-        /// Falls back to the parent ROM name for clones.
+        /// Returns the image path for the given key from the lookup,
+        /// or null if the key is null or not found.
         /// </summary>
-        private static string FindImagePath(
-            Dictionary<string, string> availableImages,
-            Dictionary<string, RomsetMachine> romData,
-            string romKey)
+        private static string FindInLookup(Dictionary<string, string> lookup, string key)
         {
-            // Direct match.
-            if (availableImages.TryGetValue(romKey, out var path))
-                return path;
-
-            // If this is a clone, try the parent.
-            if (romData.TryGetValue(romKey, out var machine) &&
-                machine.IsClone &&
-                !string.IsNullOrEmpty(machine.CloneOf))
-            {
-                if (availableImages.TryGetValue(machine.CloneOf, out var parentPath))
-                    return parentPath;
-            }
-
-            return null;
+            if (key == null || lookup == null || lookup.Count == 0)
+                return null;
+            return lookup.TryGetValue(key, out var path) ? path : null;
         }
 
         /// <summary>
@@ -180,14 +198,12 @@ namespace MAMEHelper.Services
             {
                 if (!string.IsNullOrEmpty(game.CoverImage))
                     _api.Database.RemoveFile(game.CoverImage);
-
                 game.CoverImage = _api.Database.AddFile(imagePath, game.Id);
             }
             else
             {
                 if (!string.IsNullOrEmpty(game.BackgroundImage))
                     _api.Database.RemoveFile(game.BackgroundImage);
-
                 game.BackgroundImage = _api.Database.AddFile(imagePath, game.Id);
             }
         }

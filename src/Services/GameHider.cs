@@ -30,16 +30,16 @@ namespace MAMEHelper.Services
         public void HideNonGames(Dictionary<string, RomsetMachine> romData)
             => RunHideOperation("Hide Non-Games", romData, m => m.IsNonGame);
 
-        /// <summary>Hides all games whose MAME year falls outside [fromYear, toYear].</summary>
-        public void HideByYearRange(Dictionary<string, RomsetMachine> romData, int fromYear, int toYear)
+        public void HideByYearRange(Dictionary<string, RomsetMachine> romData,
+            int fromYear, int toYear)
             => RunHideOperation($"Hide by Year Range ({fromYear}–{toYear})", romData, m =>
             {
                 if (!int.TryParse(m.Year, out int y)) return false;
                 return y < fromYear || y > toYear;
             });
 
-        /// <summary>Hides all games whose manufacturer matches the supplied string (case-insensitive, partial match).</summary>
-        public void HideByManufacturer(Dictionary<string, RomsetMachine> romData, string manufacturer)
+        public void HideByManufacturer(Dictionary<string, RomsetMachine> romData,
+            string manufacturer)
         {
             if (string.IsNullOrWhiteSpace(manufacturer)) return;
             string lower = manufacturer.ToLower();
@@ -47,14 +47,30 @@ namespace MAMEHelper.Services
                 m => m.Manufacturer?.ToLower().Contains(lower) == true);
         }
 
-        /// <summary>Un-hides every game in the library (MAME or otherwise).</summary>
+        /// <summary>
+        /// Hides games whose catver.ini top-level category is in the
+        /// NonGameCategories set (System, Computer, Calculator, etc.).
+        /// </summary>
+        public void HideNonGamesByCatver(
+            Dictionary<string, RomsetMachine> romData,
+            Dictionary<string, string> catverData)
+        {
+            RunHideOperationWithCatver(
+                "Hide Non-Games (catver.ini)",
+                romData,
+                catverData,
+                category => CatverParser.NonGameCategories.Contains(
+                    CatverParser.GetTopLevel(category)));
+        }
+
+        /// <summary>Un-hides every game in the library.</summary>
         public void UnhideAll()
         {
             int unhidden = 0;
+            var games = _api.Database.Games.ToList();
 
             _api.Dialogs.ActivateGlobalProgress(args =>
             {
-                var games = _api.Database.Games.ToList();
                 args.ProgressMaxValue = games.Count;
 
                 _api.Database.BeginBufferUpdate();
@@ -64,7 +80,7 @@ namespace MAMEHelper.Services
                     {
                         if (args.CancelToken.IsCancellationRequested) break;
                         args.CurrentProgressValue++;
-                        args.Text = $"Unhiding: {game.Name}";
+                        args.Text = $"Unhiding ({args.CurrentProgressValue}/{games.Count})\n{game.Name}";
 
                         if (!game.Hidden) continue;
                         game.Hidden = false;
@@ -81,7 +97,7 @@ namespace MAMEHelper.Services
                 "MAME Helper");
         }
 
-        // ── Shared runner ─────────────────────────────────────────────────────
+        // ── Shared runners ────────────────────────────────────────────────────
 
         private void RunHideOperation(
             string operationName,
@@ -90,10 +106,10 @@ namespace MAMEHelper.Services
         {
             int hidden  = 0;
             int skipped = 0;
+            var games = _api.Database.Games.ToList();
 
             _api.Dialogs.ActivateGlobalProgress(args =>
             {
-                var games = _api.Database.Games.ToList();
                 args.ProgressMaxValue = games.Count;
 
                 _api.Database.BeginBufferUpdate();
@@ -106,7 +122,7 @@ namespace MAMEHelper.Services
                         args.CurrentProgressValue++;
                         args.Text = $"{operationName} ({args.CurrentProgressValue}/{games.Count})\n{game.Name}";
 
-                        string key = game.Name?.ToLower().Trim();
+                        string key = MatchingHelper.ResolveRomKey(game);
                         if (key == null || !romData.TryGetValue(key, out var machine))
                         {
                             skipped++;
@@ -127,6 +143,63 @@ namespace MAMEHelper.Services
 
             _api.Dialogs.ShowMessage(
                 $"Done.\n\nHidden:           {hidden}\nNo MAME match: {skipped}",
+                "MAME Helper");
+        }
+
+        private void RunHideOperationWithCatver(
+            string operationName,
+            Dictionary<string, RomsetMachine> romData,
+            Dictionary<string, string> catverData,
+            Func<string, bool> shouldHide)
+        {
+            int hidden   = 0;
+            int skipped  = 0;
+            int noCatver = 0;
+            var games = _api.Database.Games.ToList();
+
+            _api.Dialogs.ActivateGlobalProgress(args =>
+            {
+                args.ProgressMaxValue = games.Count;
+
+                _api.Database.BeginBufferUpdate();
+                try
+                {
+                    foreach (var game in games)
+                    {
+                        if (args.CancelToken.IsCancellationRequested) break;
+
+                        args.CurrentProgressValue++;
+                        args.Text = $"{operationName} ({args.CurrentProgressValue}/{games.Count})\n{game.Name}";
+
+                        string key = MatchingHelper.ResolveRomKey(game);
+                        if (key == null || !romData.ContainsKey(key))
+                        {
+                            skipped++;
+                            continue;
+                        }
+
+                        if (!catverData.TryGetValue(key, out var category))
+                        {
+                            noCatver++;
+                            continue;
+                        }
+
+                        if (shouldHide(category) && !game.Hidden)
+                        {
+                            game.Hidden = true;
+                            _api.Database.Games.Update(game);
+                            hidden++;
+                        }
+                    }
+                }
+                finally { _api.Database.EndBufferUpdate(); }
+
+            }, new GlobalProgressOptions($"MAME Helper: {operationName}…", true));
+
+            _api.Dialogs.ShowMessage(
+                $"Done.\n\nHidden:              {hidden}\n" +
+                $"No MAME match:     {skipped}\n" +
+                $"Not in catver.ini: {noCatver}",
                 "MAME Helper");
         }
     }

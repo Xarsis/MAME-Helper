@@ -33,10 +33,10 @@ namespace MAMEHelper.Services
             int missingBg     = 0;
             int missingBoth   = 0;
             int skipped       = 0;
+            var games = _api.Database.Games.ToList();
 
             _api.Dialogs.ActivateGlobalProgress(args =>
             {
-                var games = _api.Database.Games.ToList();
                 args.ProgressMaxValue = games.Count;
 
                 var missingCoverList = new List<string>();
@@ -50,7 +50,7 @@ namespace MAMEHelper.Services
                     args.CurrentProgressValue++;
                     args.Text = $"Scanning ({args.CurrentProgressValue}/{games.Count})\n{game.Name}";
 
-                    string key = game.Name?.ToLower().Trim();
+                    string key = MatchingHelper.ResolveRomKey(game);
                     if (key == null || !romData.ContainsKey(key))
                     {
                         skipped++;
