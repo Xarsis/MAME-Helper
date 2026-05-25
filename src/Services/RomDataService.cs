@@ -441,7 +441,7 @@ namespace MAMEHelper.Services
 
             return new RomsetMachine
             {
-                RomName      = name.ToLower(),
+                RomName      = name.ToLower().Replace(' ', '_'),
                 IsClone      = !string.IsNullOrEmpty(cloneOf),
                 CloneOf      = cloneOf?.ToLower(),
                 IsBios       = reader.GetAttribute("isbios")      == "yes",

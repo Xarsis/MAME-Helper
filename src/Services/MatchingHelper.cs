@@ -21,9 +21,9 @@ namespace MAMEHelper.Services
         {
             string romName = ExtractRomNameFromNotes(game.Notes);
             if (romName != null)
-                return romName;
+                return romName.ToLower().Replace(' ', '_').Trim();
 
-            return game.Name?.ToLower().Trim();
+            return game.Name?.ToLower().Replace(' ', '_').Trim();
         }
 
         /// <summary>
@@ -44,7 +44,7 @@ namespace MAMEHelper.Services
                 {
                     string romName = trimmed.Substring(NotePrefix.Length).Trim();
                     if (!string.IsNullOrEmpty(romName))
-                        return romName.ToLower();
+                        return romName.ToLower().Replace(' ', '_');
                 }
             }
 
