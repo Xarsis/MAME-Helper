@@ -337,3 +337,5 @@ MAMEHelper\
 | 2.2.1 | Added option to tag ROMs based on catver.ini and updated tag removal logic
 | 2.3.0 | Updated renaming logic to use Notes field, preserving original data
 | 2.3.1 | Updated to pass Toolbox manifest verification
+| 2.3.2 | Fixed saving variables issue
+| 2.3.3 | Added normalization of spaces to underscores to improve searches in catver
