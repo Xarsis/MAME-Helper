@@ -317,5 +317,12 @@ MAMEHelper\
 | 1.12 | Added "Hide Imperfect ROMs" menu option; reordered menu: Tag, Hide Imperfect, Hide Non-Working, Remove, Diagnose |
 | 1.13 | Added "Set Source" and "Set Category" menu options with user text input dialogs |
 | 2.0.0 | Initial release as C# — full Tag, Hide, Remove, Rename, Media, and Tools functionality |
-| 2.1.0 | Addition of Settings menu in dropdown
+| 2.1.0 | Added Settings menu in dropdown
+| 2.1.1 | Fixed Settings menu in dropdown and made Playnite-theme aware
+| 2.1.2 | Fixed Settings menu in Addons
+| 2.1.3 | Added MatchingHelper and updated GameRenamer.cs to save ROM id to GameID before renaming
+| 2.1.4 | Added progress bars to catalog actions
+| 2.1.5 | Added additional folders for media in case first cover or background folders were blank for that ROM
+| 2.1.6 | Added option to force regenerate ROM cache
 | 2.2.0 | Added option to hide or remove files based on catver.ini (from https://www.progettosnaps.net/catver/)
+| 2.2.1 | Added option to tag ROMs based on catver.ini and updated tag removal logic
