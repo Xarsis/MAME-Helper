@@ -193,6 +193,12 @@ namespace MAMEHelper
             yield return MenuItem(tagMenu, "Tag: Parent / Clone",
                 _ => WithRomData(d => _tagger.TagParentClone(d)));
 
+            yield return MenuItem(tagMenu, "Tag: Category (top level)",
+                _ => WithRomAndCatverData((d, c) => _tagger.TagCatverTopLevel(d, c)));
+
+            yield return MenuItem(tagMenu, "Tag: Category (full)",
+                _ => WithRomAndCatverData((d, c) => _tagger.TagCatverFull(d, c)));
+            
             yield return MenuItem(tagMenu, "Tag: Year and Manufacturer",
                 _ => WithRomData(d => _metadata.SetYearAndManufacturer(d)));
 
