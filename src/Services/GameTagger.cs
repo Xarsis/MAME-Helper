@@ -52,13 +52,14 @@ namespace MAMEHelper.Services
 
         public void ClearAllMameTags()
         {
+            // Collect all tag IDs where the tag name starts with "MAME: "
+            // This covers both the fixed tags and any catver-generated tags.
             var tagIdsToRemove = new HashSet<Guid>();
-            foreach (var tagName in AllMameTags)
+            foreach (var tag in _api.Database.Tags)
             {
-                var existing = _api.Database.Tags.FirstOrDefault(
-                    t => t.Name.Equals(tagName, StringComparison.OrdinalIgnoreCase));
-                if (existing != null)
-                    tagIdsToRemove.Add(existing.Id);
+                if (tag.Name != null &&
+                    tag.Name.StartsWith("MAME: ", StringComparison.OrdinalIgnoreCase))
+                    tagIdsToRemove.Add(tag.Id);
             }
 
             if (tagIdsToRemove.Count == 0)
@@ -98,6 +99,36 @@ namespace MAMEHelper.Services
             _api.Dialogs.ShowMessage(
                 $"Cleared MAME tags from {cleared} game(s).",
                 "MAME Helper");
+        }
+
+        /// <summary>
+        /// Tags all matched games with their catver.ini top-level category.
+        /// e.g. "MAME: Shooter", "MAME: Maze", "MAME: Fighter"
+        /// </summary>
+        public void TagCatverTopLevel(
+            Dictionary<string, RomsetMachine> romData,
+            Dictionary<string, string> catverData)
+        {
+            RunCatverTagOperation(
+                "Tag: Category (top level)",
+                romData,
+                catverData,
+                category => "MAME: " + CatverParser.GetTopLevel(category));
+        }
+
+        /// <summary>
+        /// Tags all matched games with their full catver.ini category string.
+        /// e.g. "MAME: Shooter / Flying Vertical", "MAME: Maze / Shooter Small"
+        /// </summary>
+        public void TagCatverFull(
+            Dictionary<string, RomsetMachine> romData,
+            Dictionary<string, string> catverData)
+        {
+            RunCatverTagOperation(
+                "Tag: Category (full)",
+                romData,
+                catverData,
+                category => "MAME: " + category.Trim());
         }
 
         // ── Core tagging logic ────────────────────────────────────────────────
@@ -173,6 +204,60 @@ namespace MAMEHelper.Services
                 $"Done.\n\nTagged:           {tagged}\nNo MAME match: {skipped}",
                 "MAME Helper");
         }
+
+        private void RunCatverTagOperation(
+            string operationName,
+            Dictionary<string, RomsetMachine> romData,
+            Dictionary<string, string> catverData,
+            Func<string, string> getTagName)
+                {
+                    int tagged = 0;
+                    int skipped = 0;
+                    int noCatver = 0;
+                    var games = _api.Database.Games.ToList();
+
+                    _api.Dialogs.ActivateGlobalProgress(args =>
+                    {
+                        args.ProgressMaxValue = games.Count;
+
+                        foreach (var game in games)
+                        {
+                            if (args.CancelToken.IsCancellationRequested) break;
+
+                            args.CurrentProgressValue++;
+                            args.Text = $"{operationName} ({args.CurrentProgressValue}/{games.Count})\n{game.Name}";
+
+                            string key = MatchingHelper.ResolveRomKey(game);
+                            if (key == null || !romData.ContainsKey(key))
+                            {
+                                skipped++;
+                                continue;
+                            }
+
+                            if (!catverData.TryGetValue(key, out var category))
+                            {
+                                noCatver++;
+                                continue;
+                            }
+
+                            if (game.TagIds == null)
+                                game.TagIds = new List<Guid>();
+
+                            string tagName = getTagName(category);
+                            AddTag(game, tagName);
+                            _api.Database.Games.Update(game);
+                            tagged++;
+                        }
+
+                    }, new GlobalProgressOptions($"MAME Helper: {operationName}…", true));
+
+                    _api.Dialogs.ShowMessage(
+                        $"Done.\n\n" +
+                        $"Tagged:              {tagged}\n" +
+                        $"No MAME match:     {skipped}\n" +
+                        $"Not in catver.ini: {noCatver}",
+                        "MAME Helper");
+                }
 
         // ── Tag helpers ───────────────────────────────────────────────────────
 
