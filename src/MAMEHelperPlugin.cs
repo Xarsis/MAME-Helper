@@ -35,6 +35,7 @@ namespace MAMEHelper
         private CsvExporter _csvExporter;
         private MissingMediaFinder _missingMedia;
         private CatverParser _catverParser;
+        private RomIdRestorer _romIdRestorer;
 
         private readonly ILogger _logger = LogManager.GetLogger();
         private const string SettingsFileName = "settings.json";
@@ -67,6 +68,7 @@ namespace MAMEHelper
             _csvExporter = new CsvExporter(PlayniteApi);
             _missingMedia = new MissingMediaFinder(PlayniteApi);
             _catverParser = new CatverParser();
+            _romIdRestorer = new RomIdRestorer(PlayniteApi);
         }
 
         // ── Settings persistence ──────────────────────────────────────────────
@@ -329,6 +331,9 @@ namespace MAMEHelper
 
             yield return MenuItem(toolsMenu, "Export Library to CSV",
                 _ => WithRomData(d => _csvExporter.Export(d)));
+
+            yield return MenuItem(toolsMenu, "Restore GameIds from ROM Paths",
+                _ => WithRomData(d => _romIdRestorer.RestoreGameIds(d)));
 
             yield return MenuItem(toolsMenu, "Regenerate ROM Cache",
                 _ =>
