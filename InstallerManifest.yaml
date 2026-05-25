@@ -1,8 +1,8 @@
 AddonId: MAME-Helper_77ed2204-c7d1-48cc-9e62-034fd035e803
 Packages:
-  - Version: 2.3.3
+  - Version: 2.3.4
     RequiredApiVersion: 6.16.0
     ReleaseDate: 2026-05-25
-    PackageUrl: https://github.com/Xarsis/MAME-Helper/raw/refs/heads/main/Releases/2.3.3/MAME-Helper_77ed2204-c7d1-48cc-9e62-034fd035e803_2_3_3.pext
+    PackageUrl: https://github.com/Xarsis/MAME-Helper/raw/refs/heads/main/Releases/2.3.4/MAME-Helper_77ed2204-c7d1-48cc-9e62-034fd035e803_2_3_4.pext
     Changelog:
       - Initial PEXT Release
