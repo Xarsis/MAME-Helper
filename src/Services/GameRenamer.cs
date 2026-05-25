@@ -13,9 +13,12 @@ namespace MAMEHelper.Services
     /// Renames selected games from their ROM-name form (e.g. "pacman") to the
     /// proper display name from the MAME XML description (e.g. "Pac-Man (Midway)").
     ///
+    /// Before renaming, the original ROM name is appended to the Notes field
+    /// with the prefix "MAME Helper - original name: " so that tag, filter,
+    /// and catver operations can still match the game after renaming.
+    /// Any existing Notes content is preserved.
+    ///
     /// Operates on the current Playnite selection.
-    /// Matching uses game.Name first; if that fails it tries the ROM filename
-    /// from game.Roms[0].Path (without extension) as a fallback.
     /// </summary>
     public class GameRenamer
     {
@@ -29,11 +32,9 @@ namespace MAMEHelper.Services
 
         // ── Public operations ─────────────────────────────────────────────────
 
-        /// <summary>Renames selected games, keeping region/revision info in parentheses.</summary>
         public void RenameWithInfo(Dictionary<string, RomsetMachine> romData)
             => RunRenameOperation(romData, keepInfo: true);
 
-        /// <summary>Renames selected games, stripping trailing parenthetical region/revision info.</summary>
         public void RenameWithoutInfo(Dictionary<string, RomsetMachine> romData)
             => RunRenameOperation(romData, keepInfo: false);
 
@@ -79,22 +80,25 @@ namespace MAMEHelper.Services
                             ? machine.Description
                             : StripParens(machine.Description);
 
-                        if (string.IsNullOrWhiteSpace(newName) || game.Name == newName)
+                        if (string.IsNullOrWhiteSpace(newName))
                         {
                             skipped++;
                             continue;
                         }
 
-                        // Preserve the original ROM name in GameId before renaming,
-                        // so tag/filter operations can still match after a rename.
-                        if (string.IsNullOrEmpty(game.GameId) ||
-                            game.GameId == game.Name)
+                        // Write ROM name into Notes with prefix, preserving existing content.
+                        // Uses BuildUpdatedNotes so re-running rename won't duplicate the entry.
+                        game.Notes = MatchingHelper.BuildUpdatedNotes(game.Notes, machine.RomName);
+
+                        // Only update Name if it has actually changed.
+                        if (game.Name != newName)
                         {
-                            game.GameId = machine.RomName;
+                            _logger.Info(
+                                $"MAMEHelper: Rename '{game.Name}' → '{newName}' " +
+                                $"(ROM: {machine.RomName})");
+                            game.Name = newName;
                         }
 
-                        _logger.Info($"MAMEHelper: Rename '{game.Name}' → '{newName}'");
-                        game.Name = newName;
                         _api.Database.Games.Update(game);
                         renamed++;
                     }
@@ -104,7 +108,8 @@ namespace MAMEHelper.Services
             }, new GlobalProgressOptions("MAME Helper: Renaming games…", true));
 
             _api.Dialogs.ShowMessage(
-                $"Done.\n\nRenamed:          {renamed}\n" +
+                $"Done.\n\n" +
+                $"Renamed:          {renamed}\n" +
                 $"Already correct:  {skipped}\n" +
                 $"No MAME match:  {noMatch}",
                 "MAME Helper");
@@ -114,17 +119,18 @@ namespace MAMEHelper.Services
 
         /// <summary>
         /// Tries to find a RomsetMachine for a game.
-        /// First matches by game.Name; if that fails, tries the ROM filename.
+        /// Uses MatchingHelper which checks the Notes prefix first,
+        /// then falls back to game.Name, then to the ROM file path.
         /// </summary>
         private static RomsetMachine FindMachine(
             Dictionary<string, RomsetMachine> romData, Game game)
         {
-            // Check GameId first (previously saved ROM name).
+            // Check Notes prefix and game.Name via MatchingHelper.
             string key = MatchingHelper.ResolveRomKey(game);
             if (key != null && romData.TryGetValue(key, out var m1))
                 return m1;
 
-            // Fall back to ROM filename from path.
+            // Final fallback — ROM filename from the file path.
             if (game.Roms != null && game.Roms.Count > 0)
             {
                 string romKey = Path.GetFileNameWithoutExtension(game.Roms[0].Path)
@@ -136,7 +142,6 @@ namespace MAMEHelper.Services
             return null;
         }
 
-        /// <summary>Strips the last set of parentheses from a name, e.g. "Pac-Man (Midway)" → "Pac-Man".</summary>
         private static string StripParens(string description)
         {
             if (string.IsNullOrEmpty(description)) return description;
